@@ -232,31 +232,34 @@ const WebGLRenderer = {
     },
     
     initBuffers() {
+        const s = 0.5;
+        const d = 0.05;
+        
         const vertices = [
-            -0.4, -0.6,  0.05,  0,  0,  1,  0, 1,
-             0.4, -0.6,  0.05,  0,  0,  1,  1, 1,
-             0.4,  0.6,  0.05,  0,  0,  1,  1, 0,
-            -0.4,  0.6,  0.05,  0,  0,  1,  0, 0,
-            -0.4, -0.6, -0.05,  0,  0, -1,  0, 1,
-            -0.4,  0.6, -0.05,  0,  0, -1,  0, 0,
-             0.4,  0.6, -0.05,  0,  0, -1,  1, 0,
-             0.4, -0.6, -0.05,  0,  0, -1,  1, 1,
-            -0.4,  0.6, -0.05,  0,  1,  0,  0, 1,
-            -0.4,  0.6,  0.05,  0,  1,  0,  0, 0,
-             0.4,  0.6,  0.05,  0,  1,  0,  1, 0,
-             0.4,  0.6, -0.05,  0,  1,  0,  1, 1,
-            -0.4, -0.6, -0.05,  0, -1,  0,  0, 1,
-             0.4, -0.6, -0.05,  0, -1,  0,  1, 1,
-             0.4, -0.6,  0.05,  0, -1,  0,  1, 0,
-            -0.4, -0.6,  0.05,  0, -1,  0,  0, 0,
-             0.4, -0.6, -0.05,  1,  0,  0,  0, 1,
-             0.4,  0.6, -0.05,  1,  0,  0,  0, 0,
-             0.4,  0.6,  0.05,  1,  0,  0,  1, 0,
-             0.4, -0.6,  0.05,  1,  0,  0,  1, 1,
-            -0.4, -0.6, -0.05, -1,  0,  0,  0, 1,
-            -0.4, -0.6,  0.05, -1,  0,  0,  1, 1,
-            -0.4,  0.6,  0.05, -1,  0,  0,  1, 0,
-            -0.4,  0.6, -0.05, -1,  0,  0,  0, 0,
+            -s, -s,  d,  0,  0,  1,  0, 1,
+             s, -s,  d,  0,  0,  1,  1, 1,
+             s,  s,  d,  0,  0,  1,  1, 0,
+            -s,  s,  d,  0,  0,  1,  0, 0,
+            -s, -s, -d,  0,  0, -1,  0, 1,
+            -s,  s, -d,  0,  0, -1,  0, 0,
+             s,  s, -d,  0,  0, -1,  1, 0,
+             s, -s, -d,  0,  0, -1,  1, 1,
+            -s,  s, -d,  0,  1,  0,  0, 1,
+            -s,  s,  d,  0,  1,  0,  0, 0,
+             s,  s,  d,  0,  1,  0,  1, 0,
+             s,  s, -d,  0,  1,  0,  1, 1,
+            -s, -s, -d,  0, -1,  0,  0, 1,
+             s, -s, -d,  0, -1,  0,  1, 1,
+             s, -s,  d,  0, -1,  0,  1, 0,
+            -s, -s,  d,  0, -1,  0,  0, 0,
+             s, -s, -d,  1,  0,  0,  0, 1,
+             s,  s, -d,  1,  0,  0,  0, 0,
+             s,  s,  d,  1,  0,  0,  1, 0,
+             s, -s,  d,  1,  0,  0,  1, 1,
+            -s, -s, -d, -1,  0,  0,  0, 1,
+            -s, -s,  d, -1,  0,  0,  1, 1,
+            -s,  s,  d, -1,  0,  0,  1, 0,
+            -s,  s, -d, -1,  0,  0,  0, 0,
         ];
         
         const indices = [
@@ -349,8 +352,8 @@ const WebGLRenderer = {
             rows = 4;
         }
         
-        const spacingX = 1.0;
-        const spacingY = 1.3;
+        const spacingX = 1.2;
+        const spacingY = 1.2;
         const startX = -((cols - 1) * spacingX) / 2;
         const startY = ((rows - 1) * spacingY) / 2;
         
@@ -432,15 +435,20 @@ const WebGLRenderer = {
     getCardAtPosition(x, y) {
         const aspect = this.width / this.height;
         const fov = Math.PI / 4;
-        const near = 0.1;
-        const far = 100;
+        const cardSize = 0.5;
         
-        const rayDir = this.unproject(x, y, aspect, fov, near, far);
-        const rayOrigin = [this.camera.x, this.camera.y, this.camera.z];
+        const f = 1.0 / Math.tan(fov / 2);
+        const cameraZ = this.camera.z;
+        
+        const worldX = x * aspect * cameraZ / f + this.camera.x;
+        const worldY = y * cameraZ / f + this.camera.y;
         
         for (let i = 0; i < this.cards.length; i++) {
             const card = this.cards[i];
-            if (this.rayCardIntersect(rayOrigin, rayDir, card)) {
+            const dx = worldX - card.x;
+            const dy = worldY - card.y;
+            
+            if (Math.abs(dx) < cardSize && Math.abs(dy) < cardSize) {
                 return i;
             }
         }
@@ -611,7 +619,7 @@ const WebGLRenderer = {
             this.gl.uniformMatrix4fv(modelLoc, false, modelMatrix);
             this.gl.uniform1f(isMatchedLoc, card.isMatched ? 1.0 : 0.0);
             
-            const isBack = card.rotationY > Math.PI / 2;
+            const isBack = card.rotationY < Math.PI / 2;
             this.gl.uniform1f(isBackLoc, isBack ? 1.0 : 0.0);
             
             if (!isBack && this.textures[theme] && this.textures[theme][card.emojiIndex]) {
