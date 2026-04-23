@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味记忆力挑战</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="main-menu" class="menu-screen">
+                <h1 class="game-title">🎮 趣味记忆力挑战</h1>
+                <div class="menu-buttons">
+                    <button id="startBtn" class="menu-btn">开始游戏</button>
+                    <button id="settingsBtn" class="menu-btn">游戏设置</button>
+                    <button id="recordsBtn" class="menu-btn">通关记录</button>
+                    <button id="dailyBtn" class="menu-btn">每日任务</button>
+                </div>
+            </div>
+            
+            <div id="settings-screen" class="menu-screen hidden">
+                <h2 class="screen-title">游戏设置</h2>
+                <div class="settings-container">
+                    <div class="setting-item">
+                        <label>难度等级</label>
+                        <select id="difficultySelect">
+                            <option value="easy">简单 (4对图标)</option>
+                            <option value="medium" selected>中等 (6对图标)</option>
+                            <option value="hard">困难 (8对图标)</option>
+                            <option value="expert">专家 (12对图标)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>图标主题</label>
+                        <select id="themeSelect">
+                            <option value="animals" data-unlocked="true">🐾 动物</option>
+                            <option value="fruits" data-unlocked="true">🍎 水果</option>
+                            <option value="symbols" data-unlocked="true">⭐ 符号</option>
+                            <option value="space" data-unlocked="false">🚀 太空 (通关困难解锁)</option>
+                            <option value="ocean" data-unlocked="false">🌊 海洋 (通关专家解锁)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>音效</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="soundToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <button id="backFromSettings" class="menu-btn">返回主菜单</button>
+            </div>
+            
+            <div id="records-screen" class="menu-screen hidden">
+                <h2 class="screen-title">通关记录</h2>
+                <div class="records-container">
+                    <div class="record-section">
+                        <h3>最快通关时间</h3>
+                        <div id="fastestTimes">
+                            <div class="record-item">
+                                <span class="record-level">简单:</span>
+                                <span class="record-time" id="easy-time">--:--</span>
+                            </div>
+                            <div class="record-item">
+                                <span class="record-level">中等:</span>
+                                <span class="record-time" id="medium-time">--:--</span>
+                            </div>
+                            <div class="record-item">
+                                <span class="record-level">困难:</span>
+                                <span class="record-time" id="hard-time">--:--</span>
+                            </div>
+                            <div class="record-item">
+                                <span class="record-level">专家:</span>
+                                <span class="record-time" id="expert-time">--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="record-section">
+                        <h3>历史通关</h3>
+                        <div id="historyList" class="history-list">
+                            <p class="no-history">暂无通关记录</p>
+                        </div>
+                    </div>
+                </div>
+                <button id="backFromRecords" class="menu-btn">返回主菜单</button>
+            </div>
+            
+            <div id="daily-screen" class="menu-screen hidden">
+                <h2 class="screen-title">每日任务</h2>
+                <div class="daily-container">
+                    <div class="daily-header">
+                        <span id="currentDate"></span>
+                        <span class="streak-info" id="streakInfo">连续打卡: 0天</span>
+                    </div>
+                    <div class="task-list" id="taskList">
+                        <div class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">完成一局简单模式</span>
+                                <span class="task-reward">+10 经验</span>
+                            </div>
+                            <span class="task-status" id="task1-status">未完成</span>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">完成一局中等模式</span>
+                                <span class="task-reward">+20 经验</span>
+                            </div>
+                            <span class="task-status" id="task2-status">未完成</span>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">在1分钟内通关任意模式</span>
+                                <span class="task-reward">+30 经验</span>
+                            </div>
+                            <span class="task-status" id="task3-status">未完成</span>
+                        </div>
+                    </div>
+                    <div class="exp-info">
+                        <div class="exp-bar">
+                            <div class="exp-fill" id="expFill"></div>
+                        </div>
+                        <span id="expText">等级 1 - 0/100 经验</span>
+                    </div>
+                </div>
+                <button id="backFromDaily" class="menu-btn">返回主菜单</button>
+            </div>
+            
+            <div id="game-screen" class="hidden">
+                <div class="game-hud">
+                    <div class="hud-item">
+                        <span class="hud-label">剩余配对:</span>
+                        <span class="hud-value" id="pairsLeft">0</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">时间:</span>
+                        <span class="hud-value" id="timeLeft">00:00</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">尝试次数:</span>
+                        <span class="hud-value" id="attempts">0</span>
+                    </div>
+                    <button id="pauseBtn" class="pause-btn">⏸️ 暂停</button>
+                </div>
+                <div id="gameMessage" class="game-message hidden"></div>
+            </div>
+            
+            <div id="pause-screen" class="overlay-screen hidden">
+                <div class="overlay-content">
+                    <h2>游戏暂停</h2>
+                    <div class="pause-buttons">
+                        <button id="resumeBtn" class="menu-btn">继续游戏</button>
+                        <button id="restartBtn" class="menu-btn">重新开始</button>
+                        <button id="quitBtn" class="menu-btn">退出游戏</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="victory-screen" class="overlay-screen hidden">
+                <div class="overlay-content victory-content">
+                    <h2>🎉 恭喜通关！</h2>
+                    <div class="result-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">难度:</span>
+                            <span class="stat-value" id="resultDifficulty">中等</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">用时:</span>
+                            <span class="stat-value" id="resultTime">00:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">尝试次数:</span>
+                            <span class="stat-value" id="resultAttempts">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">主题:</span>
+                            <span class="stat-value" id="resultTheme">动物</span>
+                        </div>
+                    </div>
+                    <div id="newRecord" class="new-record hidden">🏆 新纪录！</div>
+                    <div id="unlockMessage" class="unlock-message hidden"></div>
+                    <div class="victory-buttons">
+                        <button id="playAgainBtn" class="menu-btn">再玩一局</button>
+                        <button id="backToMenuBtn" class="menu-btn">返回主菜单</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="gameover-screen" class="overlay-screen hidden">
+                <div class="overlay-content gameover-content">
+                    <h2>⏰ 时间到！</h2>
+                    <p class="gameover-message">很遗憾，时间用完了</p>
+                    <div class="gameover-buttons">
+                        <button id="tryAgainBtn" class="menu-btn">再试一次</button>
+                        <button id="backToMenuFromGameover" class="menu-btn">返回主菜单</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/storage.js"></script>
+    <script src="js/webgl.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
