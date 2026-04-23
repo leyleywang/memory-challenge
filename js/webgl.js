@@ -334,26 +334,66 @@ const WebGLRenderer = {
         
         let selectedIndices = [];
         for (let i = 0; i < pairs; i++) {
-            selectedIndices.push(i % themeEmojis.length);
+            const emojiIndex = i % themeEmojis.length;
+            selectedIndices.push(emojiIndex);
+            selectedIndices.push(emojiIndex);
         }
-        selectedIndices = [...selectedIndices, ...selectedIndices];
         selectedIndices = this.shuffleArray(selectedIndices);
         
         const totalCards = pairs * 2;
+        const aspect = this.width / this.height;
+        
         let cols, rows;
-        if (totalCards <= 8) {
-            cols = 4;
-            rows = 2;
-        } else if (totalCards <= 16) {
-            cols = 4;
-            rows = 4;
+        if (aspect > 1.5) {
+            if (totalCards <= 8) {
+                cols = 4;
+                rows = 2;
+            } else if (totalCards <= 16) {
+                cols = 6;
+                rows = 3;
+            } else {
+                cols = 8;
+                rows = 3;
+            }
+        } else if (aspect < 0.7) {
+            if (totalCards <= 8) {
+                cols = 2;
+                rows = 4;
+            } else if (totalCards <= 16) {
+                cols = 3;
+                rows = 6;
+            } else {
+                cols = 4;
+                rows = 6;
+            }
         } else {
-            cols = 6;
-            rows = 4;
+            if (totalCards <= 8) {
+                cols = 4;
+                rows = 2;
+            } else if (totalCards <= 16) {
+                cols = 4;
+                rows = 4;
+            } else {
+                cols = 6;
+                rows = 4;
+            }
         }
         
-        const spacingX = 1.2;
-        const spacingY = 1.2;
+        const fov = Math.PI / 4;
+        const cameraZ = 5;
+        const f = 1.0 / Math.tan(fov / 2);
+        
+        const visibleHeight = 2 * cameraZ / f;
+        const visibleWidth = visibleHeight * aspect;
+        
+        const margin = 0.3;
+        const maxWidthPerCard = (visibleWidth - margin * 2) / cols;
+        const maxHeightPerCard = (visibleHeight - margin * 2) / rows;
+        const cardSize = Math.min(maxWidthPerCard, maxHeightPerCard, 1.0);
+        
+        const spacingX = cardSize + 0.1;
+        const spacingY = cardSize + 0.1;
+        
         const startX = -((cols - 1) * spacingX) / 2;
         const startY = ((rows - 1) * spacingY) / 2;
         
@@ -374,10 +414,12 @@ const WebGLRenderer = {
                 isMatched: false,
                 isAnimating: false,
                 matchAnimation: 0,
-                scale: 1,
-                targetScale: 1
+                scale: cardSize,
+                targetScale: cardSize
             });
         }
+        
+        this.cardHitSize = cardSize / 2;
         
         return config;
     },
@@ -435,7 +477,7 @@ const WebGLRenderer = {
     getCardAtPosition(x, y) {
         const aspect = this.width / this.height;
         const fov = Math.PI / 4;
-        const cardSize = 0.5;
+        const cardHitSize = this.cardHitSize || 0.5;
         
         const f = 1.0 / Math.tan(fov / 2);
         const cameraZ = this.camera.z;
@@ -448,7 +490,7 @@ const WebGLRenderer = {
             const dx = worldX - card.x;
             const dy = worldY - card.y;
             
-            if (Math.abs(dx) < cardSize && Math.abs(dy) < cardSize) {
+            if (Math.abs(dx) < cardHitSize && Math.abs(dy) < cardHitSize) {
                 return i;
             }
         }
